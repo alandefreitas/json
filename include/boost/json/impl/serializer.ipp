@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Vinnie Falco (vinnie.falco@gmail.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// file LICENSE_1_0.txt or copy at http://www_.boost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/boostorg/json
 //
@@ -31,7 +31,9 @@ enum class serializer::state : char
     utf1, utf2, utf3, utf4, utf5,
     num,
     arr1, arr2, arr3, arr4,
-    obj1, obj2, obj3, obj4, obj5, obj6
+    obj1, obj2, obj3, obj4, obj5, obj6,
+
+    resume_fn = 127 // hack to make things work for now
 };
 
 //----------------------------------------------------------
@@ -43,7 +45,7 @@ bool
 serializer::
 suspend(state st)
 {
-    st_.push(st);
+    w_.stack.push(st);
     return false;
 }
 
@@ -54,9 +56,9 @@ suspend(
     array::const_iterator it,
     array const* pa)
 {
-    st_.push(pa);
-    st_.push(it);
-    st_.push(st);
+    w_.stack.push(pa);
+    w_.stack.push(it);
+    w_.stack.push(st);
     return false;
 }
 
@@ -67,9 +69,9 @@ suspend(
     object::const_iterator it,
     object const* po)
 {
-    st_.push(po);
-    st_.push(it);
-    st_.push(st);
+    w_.stack.push(po);
+    w_.stack.push(it);
+    w_.stack.push(st);
     return false;
 }
 
@@ -79,10 +81,10 @@ serializer::
 write_null(stream& ss0)
 {
     local_stream ss(ss0);
-    if(! StackEmpty && ! st_.empty())
+    if(! StackEmpty && ! w_.stack.empty())
     {
         state st;
-        st_.pop(st);
+        w_.stack.pop(st);
         switch(st)
         {
         default:
@@ -121,10 +123,10 @@ serializer::
 write_true(stream& ss0)
 {
     local_stream ss(ss0);
-    if(! StackEmpty && ! st_.empty())
+    if(! StackEmpty && ! w_.stack.empty())
     {
         state st;
-        st_.pop(st);
+        w_.stack.pop(st);
         switch(st)
         {
         default:
@@ -163,10 +165,10 @@ serializer::
 write_false(stream& ss0)
 {
     local_stream ss(ss0);
-    if(! StackEmpty && ! st_.empty())
+    if(! StackEmpty && ! w_.stack.empty())
     {
         state st;
-        st_.pop(st);
+        w_.stack.pop(st);
         switch(st)
         {
         default:
@@ -212,10 +214,10 @@ write_string(stream& ss0)
 {
     local_stream ss(ss0);
     local_const_stream cs(cs0_);
-    if(! StackEmpty && ! st_.empty())
+    if(! StackEmpty && ! w_.stack.empty())
     {
         state st;
-        st_.pop(st);
+        w_.stack.pop(st);
         switch(st)
         {
         default:
@@ -306,7 +308,7 @@ do_str3:
                 }
                 else
                 {
-                    buf_[0] = c;
+                    w_.temp[0] = c;
                     return suspend(
                         state::esc1);
                 }
@@ -325,9 +327,9 @@ do_str3:
                 else
                 {
                     ss.append('\\');
-                    buf_[0] = hex[static_cast<
+                    w_.temp[0] = hex[static_cast<
                         unsigned char>(ch) >> 4];
-                    buf_[1] = hex[static_cast<
+                    w_.temp[1] = hex[static_cast<
                         unsigned char>(ch) & 15];
                     goto do_utf1;
                 }
@@ -349,7 +351,7 @@ do_str4:
 
 do_esc1:
     if(BOOST_JSON_LIKELY(ss))
-        ss.append(buf_[0]);
+        ss.append(w_.temp[0]);
     else
         return suspend(state::esc1);
     goto do_str3;
@@ -371,12 +373,12 @@ do_utf3:
         return suspend(state::utf3);
 do_utf4:
     if(BOOST_JSON_LIKELY(ss))
-        ss.append(buf_[0]);
+        ss.append(w_.temp[0]);
     else
         return suspend(state::utf4);
 do_utf5:
     if(BOOST_JSON_LIKELY(ss))
-        ss.append(buf_[1]);
+        ss.append(w_.temp[1]);
     else
         return suspend(state::utf5);
     goto do_str3;
@@ -388,7 +390,7 @@ serializer::
 write_number(stream& ss0)
 {
     local_stream ss(ss0);
-    if(StackEmpty || st_.empty())
+    if(StackEmpty || w_.stack.empty())
     {
         switch(jv_->kind())
         {
@@ -402,8 +404,8 @@ write_number(stream& ss0)
                     ss.data(), jv_->get_int64()));
                 return true;
             }
-            cs0_ = { buf_, detail::format_int64(
-                buf_, jv_->get_int64()) };
+            cs0_ = { w_.temp, detail::format_int64(
+                w_.temp, jv_->get_int64()) };
             break;
 
         case kind::uint64:
@@ -415,8 +417,8 @@ write_number(stream& ss0)
                     ss.data(), jv_->get_uint64()));
                 return true;
             }
-            cs0_ = { buf_, detail::format_uint64(
-                buf_, jv_->get_uint64()) };
+            cs0_ = { w_.temp, detail::format_uint64(
+                w_.temp, jv_->get_uint64()) };
             break;
 
         case kind::double_:
@@ -428,15 +430,15 @@ write_number(stream& ss0)
                     ss.data(), jv_->get_double()));
                 return true;
             }
-            cs0_ = { buf_, detail::format_double(
-                buf_, jv_->get_double()) };
+            cs0_ = { w_.temp, detail::format_double(
+                w_.temp, jv_->get_double()) };
             break;
         }
     }
     else
     {
         state st;
-        st_.pop(st);
+        w_.stack.pop(st);
         BOOST_ASSERT(
             st == state::num);
     }
@@ -461,7 +463,7 @@ write_array(stream& ss0)
     local_stream ss(ss0);
     array::const_iterator it;
     array::const_iterator end;
-    if(StackEmpty || st_.empty())
+    if(StackEmpty || w_.stack.empty())
     {
         pa = pa_;
         it = pa->begin();
@@ -470,9 +472,9 @@ write_array(stream& ss0)
     else
     {
         state st;
-        st_.pop(st);
-        st_.pop(it);
-        st_.pop(pa);
+        w_.stack.pop(st);
+        w_.stack.pop(it);
+        w_.stack.pop(pa);
         end = pa->end();
         switch(st)
         {
@@ -527,7 +529,7 @@ write_object(stream& ss0)
     local_stream ss(ss0);
     object::const_iterator it;
     object::const_iterator end;
-    if(StackEmpty || st_.empty())
+    if(StackEmpty || w_.stack.empty())
     {
         po = po_;
         it = po->begin();
@@ -536,9 +538,9 @@ write_object(stream& ss0)
     else
     {
         state st;
-        st_.pop(st);
-        st_.pop(it);
-        st_.pop(po);
+        w_.stack.pop(st);
+        w_.stack.pop(it);
+        w_.stack.pop(po);
         end = po->end();
         switch(st)
         {
@@ -608,7 +610,7 @@ bool
 serializer::
 write_value(stream& ss)
 {
-    if(StackEmpty || st_.empty())
+    if(StackEmpty || w_.stack.empty())
     {
         auto const& jv(*jv_);
         switch(jv.kind())
@@ -669,9 +671,17 @@ write_value(stream& ss)
     else
     {
         state st;
-        st_.peek(st);
+        w_.stack.peek(st);
         switch(st)
         {
+        case state::resume_fn:
+        {
+            bool (*fn)(detail::write_context&);
+            w_.stack.pop(st);
+            w_.stack.pop(fn);
+            return fn(w_);
+        }
+
         default:
         case state::nul1: case state::nul2:
         case state::nul3: case state::nul4:
@@ -721,11 +731,11 @@ read_some(
     BOOST_ASSERT(! done_);
 
     stream ss(dest, size);
-    if(st_.empty())
+    if(w_.stack.empty())
         (this->*fn0_)(ss);
     else
         (this->*fn1_)(ss);
-    if(st_.empty())
+    if(w_.stack.empty())
     {
         done_ = true;
         jv_ = nullptr;
@@ -741,7 +751,7 @@ serializer() noexcept
 {
     // ensure room for \uXXXX escape plus one
     BOOST_STATIC_ASSERT(
-        sizeof(serializer::buf_) >= 7);
+        sizeof(serializer::w_.temp) >= 7);
 }
 
 void
@@ -753,7 +763,7 @@ reset(value const* p) noexcept
     fn1_ = &serializer::write_value<false>;
 
     jv_ = p;
-    st_.clear();
+    w_.stack.clear();
     done_ = false;
 }
 
@@ -764,7 +774,7 @@ reset(array const* p) noexcept
     pa_ = p;
     fn0_ = &serializer::write_array<true>;
     fn1_ = &serializer::write_array<false>;
-    st_.clear();
+    w_.stack.clear();
     done_ = false;
 }
 
@@ -775,7 +785,7 @@ reset(object const* p) noexcept
     po_ = p;
     fn0_ = &serializer::write_object<true>;
     fn1_ = &serializer::write_object<false>;
-    st_.clear();
+    w_.stack.clear();
     done_ = false;
 }
 
@@ -786,7 +796,7 @@ reset(string const* p) noexcept
     cs0_ = { p->data(), p->size() };
     fn0_ = &serializer::write_string<true>;
     fn1_ = &serializer::write_string<false>;
-    st_.clear();
+    w_.stack.clear();
     done_ = false;
 }
 
@@ -797,7 +807,7 @@ reset(string_view sv) noexcept
     cs0_ = { sv.data(), sv.size() };
     fn0_ = &serializer::write_string<true>;
     fn1_ = &serializer::write_string<false>;
-    st_.clear();
+    w_.stack.clear();
     done_ = false;
 }
 

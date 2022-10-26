@@ -15,6 +15,7 @@
 #include <boost/json/detail/format.hpp>
 #include <boost/json/detail/stack.hpp>
 #include <boost/json/detail/stream.hpp>
+#include <boost/json/detail/write.hpp>
 
 BOOST_JSON_NS_BEGIN
 
@@ -73,12 +74,11 @@ class serializer
         object const* po_;
     };
 #endif
+    detail::write_context w_;
     fn_t fn0_ = &serializer::write_null<true>;
     fn_t fn1_ = &serializer::write_null<false>;
     value const* jv_ = nullptr;
-    detail::stack st_;
     const_stream cs0_;
-    char buf_[detail::max_number_chars + 1];
     bool done_ = false;
 
     inline bool suspend(state st);

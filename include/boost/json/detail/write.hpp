@@ -99,6 +99,9 @@ public:
         bool (*fn)(write_context&))
     {
         stack.push(fn);
+
+        // hack to make things work for now
+        stack.push(char(127));
     }
 };
 
