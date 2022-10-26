@@ -24,6 +24,7 @@ local SOURCES =
     doc_using_numbers.cpp
     double.cpp
     error.cpp
+    experimental.cpp
     fwd.cpp
     json.cpp
     kind.cpp
