@@ -120,6 +120,16 @@ write_null(
 
 BOOST_JSON_DECL
 bool
+write_true(
+    write_context& w);
+
+BOOST_JSON_DECL
+bool
+write_false(
+    write_context& w);
+
+BOOST_JSON_DECL
+bool
 write_string(
     write_context& w,
     char const* s,

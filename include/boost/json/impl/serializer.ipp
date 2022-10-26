@@ -24,8 +24,6 @@ BOOST_JSON_NS_BEGIN
 
 enum class serializer::state : char
 {
-    tru1, tru2, tru3, tru4,
-    fal1, fal2, fal3, fal4, fal5,
     str1, str2, str3, str4, esc1,
     utf1, utf2, utf3, utf4, utf5,
     num,
@@ -84,96 +82,6 @@ init_null(stream& ss)
     auto b = detail::write_null(w_);
     ss.advance(w_.data() - ss.data());
     return b;
-}
-
-template<bool StackEmpty>
-bool
-serializer::
-write_true(stream& ss0)
-{
-    local_stream ss(ss0);
-    if(! StackEmpty && ! w_.stack.empty())
-    {
-        state st;
-        w_.stack.pop(st);
-        switch(st)
-        {
-        default:
-        case state::tru1: goto do_tru1;
-        case state::tru2: goto do_tru2;
-        case state::tru3: goto do_tru3;
-        case state::tru4: goto do_tru4;
-        }
-    }
-do_tru1:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('t');
-    else
-        return suspend(state::tru1);
-do_tru2:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('r');
-    else
-        return suspend(state::tru2);
-do_tru3:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('u');
-    else
-        return suspend(state::tru3);
-do_tru4:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('e');
-    else
-        return suspend(state::tru4);
-    return true;
-}
-
-template<bool StackEmpty>
-bool
-serializer::
-write_false(stream& ss0)
-{
-    local_stream ss(ss0);
-    if(! StackEmpty && ! w_.stack.empty())
-    {
-        state st;
-        w_.stack.pop(st);
-        switch(st)
-        {
-        default:
-        case state::fal1: goto do_fal1;
-        case state::fal2: goto do_fal2;
-        case state::fal3: goto do_fal3;
-        case state::fal4: goto do_fal4;
-        case state::fal5: goto do_fal5;
-        }
-    }
-do_fal1:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('f');
-    else
-        return suspend(state::fal1);
-do_fal2:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('a');
-    else
-        return suspend(state::fal2);
-do_fal3:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('l');
-    else
-        return suspend(state::fal3);
-do_fal4:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('s');
-    else
-        return suspend(state::fal4);
-do_fal5:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('e');
-    else
-        return suspend(state::fal5);
-    return true;
 }
 
 template<bool StackEmpty>
@@ -608,33 +516,20 @@ write_value(stream& ss)
         case kind::bool_:
             if(jv.get_bool())
             {
-                if(BOOST_JSON_LIKELY(
-                    ss.remain() >= 4))
-                {
-                    ss.append("true", 4);
-                    return true;
-                }
-                return write_true<true>(ss);
+                w_.prepare(ss.data(), ss.remain());
+                auto b = detail::write_true(w_);
+                ss.advance(w_.data() - ss.data());
+                return b;
             }
             else
             {
-                if(BOOST_JSON_LIKELY(
-                    ss.remain() >= 5))
-                {
-                    ss.append("false", 5);
-                    return true;
-                }
-                return write_false<true>(ss);
+                w_.prepare(ss.data(), ss.remain());
+                auto b = detail::write_false(w_);
+                ss.advance(w_.data() - ss.data());
+                return b;
             }
 
         case kind::null:
-            if(BOOST_JSON_LIKELY(
-                ss.remain() >= 4))
-            {
-                ss.append("null", 4);
-                return true;
-            }
-
             w_.prepare(ss.data(), ss.remain());
             auto b = detail::write_null(w_);
             ss.advance(w_.data() - ss.data());
@@ -659,15 +554,6 @@ write_value(stream& ss)
         }
 
         default:
-        case state::tru1: case state::tru2:
-        case state::tru3: case state::tru4:
-            return write_true<StackEmpty>(ss);
-
-        case state::fal1: case state::fal2:
-        case state::fal3: case state::fal4:
-        case state::fal5:
-            return write_false<StackEmpty>(ss);
-
         case state::str1: case state::str2:
         case state::str3: case state::str4:
         case state::esc1:
