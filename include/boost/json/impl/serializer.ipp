@@ -24,7 +24,6 @@ BOOST_JSON_NS_BEGIN
 
 enum class serializer::state : char
 {
-    nul1, nul2, nul3, nul4,
     tru1, tru2, tru3, tru4,
     fal1, fal2, fal3, fal4, fal5,
     str1, str2, str3, str4, esc1,
@@ -75,46 +74,16 @@ suspend(
     return false;
 }
 
-template<bool StackEmpty>
+// this is needed so that the serializer
+// emits "null" when no value is selected.
 bool
 serializer::
-write_null(stream& ss0)
+init_null(stream& ss)
 {
-    local_stream ss(ss0);
-    if(! StackEmpty && ! w_.stack.empty())
-    {
-        state st;
-        w_.stack.pop(st);
-        switch(st)
-        {
-        default:
-        case state::nul1: goto do_nul1;
-        case state::nul2: goto do_nul2;
-        case state::nul3: goto do_nul3;
-        case state::nul4: goto do_nul4;
-        }
-    }
-do_nul1:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('n');
-    else
-        return suspend(state::nul1);
-do_nul2:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('u');
-    else
-        return suspend(state::nul2);
-do_nul3:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('l');
-    else
-        return suspend(state::nul3);
-do_nul4:
-    if(BOOST_JSON_LIKELY(ss))
-        ss.append('l');
-    else
-        return suspend(state::nul4);
-    return true;
+    w_.prepare(ss.data(), ss.remain());
+    auto b = detail::write_null(w_);
+    ss.advance(w_.data() - ss.data());
+    return b;
 }
 
 template<bool StackEmpty>
@@ -665,7 +634,11 @@ write_value(stream& ss)
                 ss.append("null", 4);
                 return true;
             }
-            return write_null<true>(ss);
+
+            w_.prepare(ss.data(), ss.remain());
+            auto b = detail::write_null(w_);
+            ss.advance(w_.data() - ss.data());
+            return b;
         }
     }
     else
@@ -679,14 +652,13 @@ write_value(stream& ss)
             bool (*fn)(detail::write_context&);
             w_.stack.pop(st);
             w_.stack.pop(fn);
-            return fn(w_);
+            w_.prepare(ss.data(), ss.remain());
+            auto b = fn(w_);
+            ss.advance(w_.data() - ss.data());
+            return b;
         }
 
         default:
-        case state::nul1: case state::nul2:
-        case state::nul3: case state::nul4:
-            return write_null<StackEmpty>(ss);
-
         case state::tru1: case state::tru2:
         case state::tru3: case state::tru4:
             return write_true<StackEmpty>(ss);
@@ -719,6 +691,7 @@ write_value(stream& ss)
     }
 }
 
+inline
 string_view
 serializer::
 read_some(

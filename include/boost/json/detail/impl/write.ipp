@@ -37,8 +37,8 @@ resume_literal(
     char const* p;
     std::size_t n;
 
-    w.stack.pop(n);
     w.stack.pop(p);
+    w.stack.pop(n);
 
     auto const avail =
         w.available();
@@ -70,13 +70,29 @@ write_null(
         return true;
     }
 
+    w.stack.push(std::size_t(4));
     w.stack.push(s);
-    w.stack.push(4);
     return resume_literal(w);
 }
 
 bool
 write_true(
+    write_context& w)
+{
+    static char const* const s = "true";
+    if(w.has_space(4))
+    {
+        w.append_unsafe(s, 4);
+        return true;
+    }
+
+    w.stack.push(std::size_t(4));
+    w.stack.push(s);
+    return resume_literal(w);
+}
+
+bool
+write_false(
     write_context& w)
 {
     static char const* const s = "false";
@@ -86,8 +102,8 @@ write_true(
         return true;
     }
 
+    w.stack.push(std::size_t(5));
     w.stack.push(s);
-    w.stack.push(5);
     return resume_literal(w);
 }
 

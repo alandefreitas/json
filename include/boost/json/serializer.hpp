@@ -75,8 +75,8 @@ class serializer
     };
 #endif
     detail::write_context w_;
-    fn_t fn0_ = &serializer::write_null<true>;
-    fn_t fn1_ = &serializer::write_null<false>;
+    fn_t fn0_ = &serializer::init_null;
+    fn_t fn1_ = &serializer::init_null;
     value const* jv_ = nullptr;
     const_stream cs0_;
     bool done_ = false;
@@ -86,7 +86,7 @@ class serializer
         state st, array::const_iterator it, array const* pa);
     inline bool suspend(
         state st, object::const_iterator it, object const* po);
-    template<bool StackEmpty> bool write_null   (stream& ss);
+    BOOST_JSON_DECL bool init_null(stream&);
     template<bool StackEmpty> bool write_true   (stream& ss);
     template<bool StackEmpty> bool write_false  (stream& ss);
     template<bool StackEmpty> bool write_string (stream& ss);
@@ -94,7 +94,7 @@ class serializer
     template<bool StackEmpty> bool write_array  (stream& ss);
     template<bool StackEmpty> bool write_object (stream& ss);
     template<bool StackEmpty> bool write_value  (stream& ss);
-    inline string_view read_some(char* dest, std::size_t size);
+    string_view read_some(char* dest, std::size_t size);
 
 public:
     /// Move constructor (deleted)

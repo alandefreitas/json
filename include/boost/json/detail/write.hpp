@@ -27,6 +27,12 @@ public:
     detail::stack stack;
     char temp[28];
 
+    char const*
+    data() const noexcept
+    {
+        return dest_;
+    }
+
     // provide an output buffer
     void
     prepare(
