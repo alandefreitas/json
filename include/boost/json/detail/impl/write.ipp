@@ -143,8 +143,8 @@ write_string(
         char const* s;
         std::size_t n;
 
-        w.stack.pop(n);
         w.stack.pop(s);
+        w.stack.pop(n);
         return write_string(w, s, n);
     };
 
@@ -153,7 +153,6 @@ write_string(
         w.stack.pop(st);
         switch(st)
         {
-        default:
         case state::str1: goto do_str1;
         case state::str2: goto do_str2;
         case state::str3: goto do_str3;
@@ -222,6 +221,7 @@ do_str3:
             auto const c = string_esc[
                 static_cast<unsigned char>(ch)];
             ++s;
+            --n;
             if(! c)
             {
                 w.append_unsafe(ch);
@@ -315,9 +315,9 @@ do_utf5:
     goto do_str3;
 
 suspend:
+    w.stack.push(st);
     w.stack.push(n);
     w.stack.push(s);
-    w.stack.push(st);
     w.push_resume(resume_string);
     return false;
 }

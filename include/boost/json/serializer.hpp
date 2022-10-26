@@ -87,7 +87,7 @@ class serializer
     inline bool suspend(
         state st, object::const_iterator it, object const* po);
     BOOST_JSON_DECL bool init_null(stream&);
-    template<bool StackEmpty> bool write_string (stream& ss);
+    BOOST_JSON_DECL bool init_string(stream&);
     template<bool StackEmpty> bool write_number (stream& ss);
     template<bool StackEmpty> bool write_array  (stream& ss);
     template<bool StackEmpty> bool write_object (stream& ss);
