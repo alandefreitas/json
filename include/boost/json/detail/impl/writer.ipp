@@ -22,12 +22,12 @@ namespace detail {
 
 // ensure room for largest printed number
 BOOST_STATIC_ASSERT(
-    sizeof(writer::temp) >=
+    sizeof(writer::temp_) >=
     max_number_chars + 1);
 
 // ensure room for \uXXXX escape plus one
 BOOST_STATIC_ASSERT(
-    sizeof(writer::temp) >= 7);
+    sizeof(writer::temp_) >= 7);
 
 //------------------------------------------------
 
@@ -89,7 +89,7 @@ write_int64(
     std::int64_t v)
 {
     auto s = detail::write_int64(
-        temp, sizeof(temp), v);
+        temp_, sizeof(temp_), v);
     return write_literal(s.data(), s.size());
 }
 
@@ -99,7 +99,7 @@ write_uint64(
     std::uint64_t v)
 {
     auto s = detail::write_uint64(
-        temp, sizeof(temp), v);
+        temp_, sizeof(temp_), v);
     return write_literal(s.data(), s.size());
 }
 
@@ -109,7 +109,7 @@ write_double(
     double v)
 {
     auto s = detail::write_double(
-        temp, sizeof(temp), v);
+        temp_, sizeof(temp_), v);
     return write_literal(s.data(), s.size());
 }
 
@@ -225,7 +225,7 @@ do_str3:
                 append_unsafe('\\');
                 if(! append(c))
                 {
-                    temp[0] = c;
+                    temp_[0] = c;
                     st = esc1;
                     goto suspend;
                 }
@@ -243,9 +243,9 @@ do_str3:
                 else
                 {
                     append_unsafe('\\');
-                    temp[0] = string_hex[static_cast<
+                    temp_[0] = string_hex[static_cast<
                         unsigned char>(ch) >> 4];
-                    temp[1] = string_hex[static_cast<
+                    temp_[1] = string_hex[static_cast<
                         unsigned char>(ch) & 15];
                     goto do_utf1;
                 }
@@ -269,7 +269,7 @@ do_str4:
     }
 
 do_esc1:
-    if(! append(temp[0]))
+    if(! append(temp_[0]))
     {
         st = esc1;
         goto suspend;
@@ -295,13 +295,13 @@ do_utf3:
         goto suspend;
     }
 do_utf4:
-    if(! append(temp[0]))
+    if(! append(temp_[0]))
     {
         st = utf4;
         goto suspend;
     }
 do_utf5:
-    if(! append(temp[1]))
+    if(! append(temp_[1]))
     {
         st = utf5;
         goto suspend;

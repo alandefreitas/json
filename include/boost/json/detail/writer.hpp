@@ -22,13 +22,13 @@ struct writer
 {
     char* dest_;
     char const* end_;
+    char temp_[29];
 
 public:
     using resume_fn =
         bool(*)(writer&);
 
     detail::stack stack;
-    char temp[29];
 
     char*
     data() noexcept
@@ -59,15 +59,6 @@ public:
     {
         return static_cast<
             std::size_t>(end_ - dest_);
-    }
-
-    // return true if there
-    // is space for `n` chars
-    bool
-    has_space(
-        std::size_t n) const noexcept
-    {
-        return available() >= n;
     }
 
     // return true if there is space
@@ -121,15 +112,6 @@ public:
             return fn(*this);
         }
         return true;
-    }
-
-    // advance the output pointer
-    void
-    advance_unsafe(
-        std::size_t n) noexcept
-    {
-        BOOST_ASSERT(n <= available());
-        dest_ += n;
     }
 
     //--------------------------------------------
