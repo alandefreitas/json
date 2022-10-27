@@ -96,7 +96,7 @@ write_array(
 {
     enum state : char
     {
-        arr1, arr2, arr3, arr4
+        arr1, arr2, arr3
     };
 
     state st;
@@ -110,13 +110,14 @@ write_array(
     {
         w.stack.pop(it);
         w.stack.pop(st);
+        if(! w.do_resume())
+            goto suspend;
         switch(st)
         {
         default:
         case state::arr1: goto do_arr1;
         case state::arr2: goto do_arr2;
         case state::arr3: goto do_arr3;
-        case state::arr4: goto do_arr4;
         }
     }
 
@@ -127,29 +128,27 @@ do_arr1:
         goto suspend;
     }
     if(it == end)
-        goto do_arr4;
+        goto do_arr3;
     for(;;)
     {
-    do_arr2:
-        if(! write_value(w, *it))
+        if(! write_value(w, *it++))
         {
             st = arr2;
             goto suspend;
         }
-        ++it;
+    do_arr2:
         if(it == end)
             break;
-    do_arr3:
         if(! w.append(','))
         {
-            st = arr3;
+            st = arr2;
             goto suspend;
         }
     }
-do_arr4:
+do_arr3:
     if(! w.append(']'))
     {
-        st = arr4;
+        st = arr3;
         goto suspend;
     }
     return true;
@@ -176,7 +175,7 @@ write_object(
 {
     enum state : char
     {
-        obj1, obj2, obj3, obj4, obj5, obj6
+        obj1, obj2, obj3, obj4
     };
 
     state st;
@@ -190,23 +189,15 @@ write_object(
     {
         w.stack.pop(it);
         w.stack.pop(st);
+        if(! w.do_resume())
+            goto suspend;
         switch(st)
         {
         default:
         case state::obj1: goto do_obj1;
-        case state::obj2:
-        {
-            // key string
-            resume_fn fn;
-            w.stack.pop(fn);
-            if(! fn(w))
-                return false;
-            goto do_obj3;
-        }
+        case state::obj2: goto do_obj2;
         case state::obj3: goto do_obj3;
         case state::obj4: goto do_obj4;
-        case state::obj5: goto do_obj5;
-        case state::obj6: goto do_obj6;
         }
     }
 
@@ -217,7 +208,7 @@ do_obj1:
         goto suspend;
     }
     if(it == end)
-        goto do_obj6;
+        goto do_obj4;
     for(;;)
     {
         // key
@@ -227,32 +218,30 @@ do_obj1:
             st = obj2;
             goto suspend;
         }
-do_obj3:
+do_obj2:
         if(! w.append(':'))
+        {
+            st = obj2;
+            goto suspend;
+        }
+        if(! write_value(w, (*it++).value()))
         {
             st = obj3;
             goto suspend;
         }
-do_obj4:
-        if(! write_value(w, it->value()))
-        {
-            st = obj4;
-            goto suspend;
-        }
-        ++it;
+do_obj3:
         if(it == end)
             break;
-do_obj5:
         if(! w.append(','))
         {
-            st = obj5;
+            st = obj3;
             goto suspend;
         }
     }
-do_obj6:
+do_obj4:
     if(! w.append('}'))
     {
-        st = obj6;
+        st = obj4;
         goto suspend;
     }
     return true;
@@ -277,7 +266,7 @@ write_value(
     detail::writer& w,
     value const& jv)
 {
-#if 1
+#if 0
     if(! w.stack.empty())
     {
         resume_fn fn;
@@ -339,7 +328,7 @@ write_value(
         break;
     }
 
-#if 1
+#if 0
 suspend:
     w.push_resume(
         [](detail::writer& w)
