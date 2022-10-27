@@ -65,8 +65,7 @@ init_object()
     auto const& obj =
         *reinterpret_cast<
             object const*>(pt_);
-    return write_object(
-        w_, obj, obj.begin());
+    return write_object(w_, obj);
 }
 
 bool
@@ -76,8 +75,7 @@ init_array()
     auto const& arr =
         *reinterpret_cast<
             array const*>(pt_);
-    return write_array(
-        w_, arr, arr.begin());
+    return write_array(w_, arr);
 }
 
 bool
@@ -94,8 +92,7 @@ bool
 serializer::
 write_array(
     detail::writer& w,
-    array const& arr,
-    array::const_iterator it)
+    array const& arr)
 {
     enum state : char
     {
@@ -104,8 +101,14 @@ write_array(
 
     state st;
     auto const end = arr.end();
-    if(! w.stack.empty())
+    array::const_iterator it{};
+    if(w.stack.empty())
     {
+        it = arr.begin();
+    }
+    else
+    {
+        w.stack.pop(it);
         w.stack.pop(st);
         switch(st)
         {
@@ -159,11 +162,8 @@ suspend:
         [](detail::writer& w)
         {
             array const* pa;
-            array::const_iterator it;
-
             w.stack.pop(pa);
-            w.stack.pop(it);
-            return write_array(w, *pa, it);
+            return write_array(w, *pa);
         });
     return false;
 }
@@ -172,8 +172,7 @@ bool
 serializer::
 write_object(
     detail::writer& w,
-    object const& obj,
-    object::const_iterator it)
+    object const& obj)
 {
     enum state : char
     {
@@ -181,9 +180,15 @@ write_object(
     };
 
     state st;
+    object::const_iterator it{};
     auto const end = obj.end();
-    if(! w.stack.empty())
+    if(w.stack.empty())
     {
+        it = obj.begin();
+    }
+    else
+    {
+        w.stack.pop(it);
         w.stack.pop(st);
         switch(st)
         {
@@ -260,11 +265,8 @@ suspend:
         [](detail::writer& w)
         {
             object const* po;
-            object::const_iterator it;
-
             w.stack.pop(po);
-            w.stack.pop(it);
-            return write_object(w, *po, it);
+            return write_object(w, *po);
         });
     return false;
 }
@@ -275,6 +277,7 @@ write_value(
     detail::writer& w,
     value const& jv)
 {
+#if 1
     if(! w.stack.empty())
     {
         resume_fn fn;
@@ -283,19 +286,20 @@ write_value(
             goto suspend;
         return true;
     }
+#endif
 
     switch(jv.kind())
     {
     case kind::array:
     {
         auto const& arr = jv.get_array();
-        return write_array(w, arr, arr.begin());
+        return write_array(w, arr);
     }
 
     case kind::object:
     {
         auto const& obj = jv.get_object();
-        if(write_object(w, obj, obj.begin()))
+        if(write_object(w, obj))
             return true;
         break;
     }
@@ -335,6 +339,7 @@ write_value(
         break;
     }
 
+#if 1
 suspend:
     w.push_resume(
         [](detail::writer& w)
@@ -343,6 +348,7 @@ suspend:
             w.stack.pop(fn);
             return fn(w);
         });
+#endif
     return false;
 }
 

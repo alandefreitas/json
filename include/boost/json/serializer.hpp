@@ -74,18 +74,11 @@ class serializer
     bool init_value();
 
     static bool write_value(
-        detail::writer& w,
-        value const& jv);
-
+        detail::writer& w, value const& jv);
     static bool write_array(
-        detail::writer& w,
-        array const& arr,
-        array::const_iterator it);
-
+        detail::writer& w, array const& arr);
     static bool write_object(
-        detail::writer& w,
-        object const& obj,
-        object::const_iterator it);
+        detail::writer& w, object const& obj);
 
     string_view read_some(
         char* dest, std::size_t size);
