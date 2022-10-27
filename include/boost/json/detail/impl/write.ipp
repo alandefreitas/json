@@ -168,7 +168,6 @@ write_double(
     write_context& w,
     double v)
 {
-    using T = std::uint64_t;
     auto const N = max_number_chars;
     if(w.has_space(N))
     {
