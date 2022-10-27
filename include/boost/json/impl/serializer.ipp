@@ -40,9 +40,10 @@ bool
 serializer::
 init_string()
 {
-    string_view s = static_cast<
-        string_view>(*reinterpret_cast<
-            string const*>(pt_));
+    auto const& str =
+        *reinterpret_cast<
+            string const*>(pt_);
+    string_view s(str.data(), str.size());
     return w_.write_string(
         s.data(), s.size());
 }
