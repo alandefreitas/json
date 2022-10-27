@@ -28,7 +28,7 @@ public:
         bool(*)(writer&);
 
     detail::stack stack;
-    char temp[28];
+    char temp[29];
 
     char*
     data() noexcept

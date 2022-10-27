@@ -57,6 +57,7 @@ inline void format_digit( char * dest, unsigned v )
     *dest = static_cast<char>( v + '0' );
 }
 
+static
 unsigned
 format_uint64(
     char* dest,
@@ -98,6 +99,7 @@ format_uint64(
     return n;
 }
 
+static
 unsigned
 format_int64(
     char* dest, int64_t i) noexcept
@@ -111,6 +113,7 @@ format_int64(
     return 1 + format_uint64(dest, ui);
 }
 
+static
 unsigned
 format_double(
     char* dest, double d) noexcept

@@ -17,28 +17,10 @@ namespace detail {
 
 int constexpr max_number_chars =
      1 +    // '-'
-    19 +    // unsigned 64-bit mantissa
+    20 +    // unsigned 64-bit mantissa
      1 +    // 'e'
      1 +    // '-'
      5;     // unsigned 16-bit exponent
-
-BOOST_JSON_DECL
-unsigned
-format_uint64(
-    char* dest,
-    std::uint64_t value) noexcept;
-
-BOOST_JSON_DECL
-unsigned
-format_int64(
-    char* dest, int64_t i) noexcept;
-
-BOOST_JSON_DECL
-unsigned
-format_double(
-    char* dest, double d) noexcept;
-
-//---
 
 string_view
 write_int64(
