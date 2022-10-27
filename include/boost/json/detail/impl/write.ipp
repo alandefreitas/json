@@ -81,35 +81,36 @@ write_null(
 }
 
 bool
-write_true(
-    write_context& w)
+write_bool(
+    write_context& w,
+    bool b)
 {
-    static char const* const s = "true";
-    if(w.has_space(4))
+    if(b)
     {
-        w.append_unsafe(s, 4);
-        return true;
+        static char const* const s = "true";
+        if(w.has_space(4))
+        {
+            w.append_unsafe(s, 4);
+            return true;
+        }
+
+        w.stack.push(std::size_t(4));
+        w.stack.push(s);
+        return resume_literal(w);
     }
-
-    w.stack.push(std::size_t(4));
-    w.stack.push(s);
-    return resume_literal(w);
-}
-
-bool
-write_false(
-    write_context& w)
-{
-    static char const* const s = "false";
-    if(w.has_space(5))
+    else
     {
-        w.append_unsafe(s, 5);
-        return true;
-    }
+        static char const* const s = "false";
+        if(w.has_space(5))
+        {
+            w.append_unsafe(s, 5);
+            return true;
+        }
 
-    w.stack.push(std::size_t(5));
-    w.stack.push(s);
-    return resume_literal(w);
+        w.stack.push(std::size_t(5));
+        w.stack.push(s);
+        return resume_literal(w);
+    }
 }
 
 bool

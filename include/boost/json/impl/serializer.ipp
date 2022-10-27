@@ -328,16 +328,9 @@ write_value(
         break;
 
     case kind::bool_:
-        if(jv.get_bool())
-        {
-            if(detail::write_true(w))
-                return true;
-        }
-        else
-        {
-            if(detail::write_false(w))
-                return true;
-        }
+        if(detail::write_bool(
+                w, jv.get_bool()))
+            return true;
         break;
 
     default:

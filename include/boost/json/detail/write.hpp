@@ -142,13 +142,9 @@ write_null(
 
 BOOST_JSON_DECL
 bool
-write_true(
-    write_context& w);
-
-BOOST_JSON_DECL
-bool
-write_false(
-    write_context& w);
+write_bool(
+    write_context& w,
+    bool b);
 
 BOOST_JSON_DECL
 bool
