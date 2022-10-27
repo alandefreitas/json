@@ -75,7 +75,7 @@ init_array()
     auto const& arr =
         *reinterpret_cast<
             array const*>(pt_);
-    return write_array(w_, arr);
+    return write_array(w_, arr); //
 }
 
 bool
