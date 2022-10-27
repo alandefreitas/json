@@ -107,6 +107,56 @@ write_false(
     return resume_literal(w);
 }
 
+bool
+write_int64(
+    write_context& w,
+    std::int64_t v)
+{
+    using T = std::int64_t;
+    auto const N = 
+        std::numeric_limits<T>::digits10 + 1 +
+        std::numeric_limits<T>::is_signed;
+    if(w.has_space(N))
+    {
+        auto const n = 
+            detail::format_int64(w.data(), v);
+        w.advance_unsafe(n);
+        return true;
+    }
+
+    BOOST_STATIC_ASSERT(sizeof(w.temp) >= N);
+    std::size_t const n = 
+        detail::format_int64(w.temp, v);
+    w.stack.push(n);
+    w.stack.push(w.temp);
+    return resume_literal(w);
+}
+
+bool
+write_uint64(
+    write_context& w,
+    std::uint64_t v)
+{
+    using T = std::uint64_t;
+    auto const N = 
+        std::numeric_limits<T>::digits10 + 1 +
+        std::numeric_limits<T>::is_signed;
+    if(w.has_space(N))
+    {
+        auto const n = 
+            detail::format_int64(w.data(), v);
+        w.advance_unsafe(n);
+        return true;
+    }
+
+    BOOST_STATIC_ASSERT(sizeof(w.temp) >= N);
+    std::size_t const n = 
+        detail::format_int64(w.temp, v);
+    w.stack.push(n);
+    w.stack.push(w.temp);
+    return resume_literal(w);
+}
+
 //------------------------------------------------
 
 static constexpr char

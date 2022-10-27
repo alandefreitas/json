@@ -27,8 +27,8 @@ public:
     detail::stack stack;
     char temp[28];
 
-    char const*
-    data() const noexcept
+    char*
+    data() noexcept
     {
         return dest_;
     }
@@ -109,6 +109,15 @@ public:
         // hack to make things work for now
         stack.push(char(127));
     }
+
+    // advance the output pointer
+    void
+    advance_unsafe(
+        std::size_t n) noexcept
+    {
+        BOOST_ASSERT(n <= available());
+        dest_ += n;
+    }
 };
 
 //------------------------------------------------
@@ -127,6 +136,24 @@ BOOST_JSON_DECL
 bool
 write_false(
     write_context& w);
+
+BOOST_JSON_DECL
+bool
+write_int64(
+    write_context& w,
+    std::int64_t v);
+
+BOOST_JSON_DECL
+bool
+write_uint64(
+    write_context& w,
+    std::uint64_t v);
+
+BOOST_JSON_DECL
+bool
+write_double(
+    write_context& w,
+    double v);
 
 BOOST_JSON_DECL
 bool
