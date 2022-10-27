@@ -21,9 +21,14 @@ namespace boost {
 namespace json {
 namespace detail {
 
+// ensure room for largest printed number
 BOOST_STATIC_ASSERT(
     sizeof(write_context::temp) >=
     max_number_chars + 1);
+
+// ensure room for \uXXXX escape plus one
+BOOST_STATIC_ASSERT(
+    sizeof(write_context::temp) >= 7);
 
 //------------------------------------------------
 
@@ -209,18 +214,6 @@ write_string(
     };
 
     state st;
-
-    auto const resume_string = [](
-        write_context& w) -> bool
-    {
-        char const* s;
-        std::size_t n;
-
-        w.stack.pop(s);
-        w.stack.pop(n);
-        return write_string(w, s, n);
-    };
-
     if(! w.stack.empty())
     {
         w.stack.pop(st);
@@ -391,7 +384,16 @@ suspend:
     w.stack.push(st);
     w.stack.push(n);
     w.stack.push(s);
-    w.push_resume(resume_string);
+    w.push_resume(
+        [](write_context& w)
+        {
+            char const* s;
+            std::size_t n;
+
+            w.stack.pop(s);
+            w.stack.pop(n);
+            return write_string(w, s, n);
+        });
     return false;
 }
 

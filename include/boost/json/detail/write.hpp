@@ -24,6 +24,9 @@ struct write_context
     char const* end_;
 
 public:
+    using resume_fn =
+        bool(*)(write_context&);
+
     detail::stack stack;
     char temp[28];
 
@@ -101,13 +104,23 @@ public:
 
     // push a resume function
     void
-    push_resume(
-        bool (*fn)(write_context&))
+    push_resume(resume_fn fn)
     {
         stack.push(fn);
+    }
 
-        // hack to make things work for now
-        stack.push(char(127));
+    // pop and invoke a resume function
+    // or return true if stack is empty
+    bool
+    do_resume()
+    {
+        if(! stack.empty())
+        {
+            resume_fn fn;
+            stack.pop(fn);
+            return fn(*this);
+        }
+        return true;
     }
 
     // advance the output pointer

@@ -56,42 +56,39 @@ BOOST_JSON_NS_BEGIN
 */
 class serializer
 {
-    enum class state : char;
-    // VFALCO Too many streams
-    using stream = detail::stream;
-    using const_stream = detail::const_stream;
-    using local_stream = detail::local_stream;
-    using local_const_stream =
-        detail::local_const_stream;
+    using init_fn = bool(serializer::*)();
+    using resume_fn =
+        bool(*)(detail::write_context&);
 
-    using fn_t = bool (serializer::*)(stream&);
-
-#ifndef BOOST_JSON_DOCS
-    union
-    {
-        value const* pv_;
-        array const* pa_;
-        object const* po_;
-    };
-#endif
+    void const* pt_ = nullptr;  // top-level thing
+    std::size_t pn_ = 0;        // for string_view
     detail::write_context w_;
-    fn_t fn0_ = &serializer::init_null;
-    fn_t fn1_ = &serializer::init_null;
-    value const* jv_ = nullptr;
-    const_stream cs0_;
+    init_fn init_ = nullptr;
     bool done_ = false;
 
-    inline bool suspend(state st);
-    inline bool suspend(
-        state st, array::const_iterator it, array const* pa);
-    inline bool suspend(
-        state st, object::const_iterator it, object const* po);
-    BOOST_JSON_DECL bool init_null(stream&);
-    BOOST_JSON_DECL bool init_string(stream&);
-    template<bool StackEmpty> bool write_array  (stream& ss);
-    template<bool StackEmpty> bool write_object (stream& ss);
-    template<bool StackEmpty> bool write_value  (stream& ss);
-    string_view read_some(char* dest, std::size_t size);
+    bool init_null();
+    bool init_string();
+    bool init_string_view();
+    bool init_object();
+    bool init_array();
+    bool init_value();
+
+    static bool write_value(
+        detail::write_context& w,
+        value const& jv);
+
+    static bool write_array(
+        detail::write_context& w,
+        array const& arr,
+        array::const_iterator it);
+
+    static bool write_object(
+        detail::write_context& w,
+        object const& obj,
+        object::const_iterator it);
+
+    string_view read_some(
+        char* dest, std::size_t size);
 
 public:
     /// Move constructor (deleted)
@@ -256,7 +253,7 @@ public:
 
         @return A @ref string_view containing the
         characters written, which may be less than
-        `size`.
+        `N`.
 
         @param dest The character array to write to.
     */
