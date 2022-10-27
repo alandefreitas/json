@@ -12,6 +12,7 @@
 
 #include <boost/json/detail/config.hpp>
 #include <boost/json/storage_ptr.hpp>
+#include <boost/static_assert.hpp>
 #include <cstring>
 
 BOOST_JSON_NS_BEGIN
@@ -48,6 +49,9 @@ public:
     void
     push(T const& t)
     {
+        BOOST_STATIC_ASSERT(
+            std::is_trivial<T>::value);
+
         auto const n = sizeof(T);
         // If this assert goes off, it
         // means the calling code did not
@@ -64,6 +68,9 @@ public:
     void
     push_unchecked(T const& t)
     {
+        BOOST_STATIC_ASSERT(
+            std::is_trivial<T>::value);
+
         auto const n = sizeof(T);
         BOOST_ASSERT(size_ + n <= cap_);
         std::memcpy(
@@ -75,6 +82,9 @@ public:
     void
     peek(T& t)
     {
+        BOOST_STATIC_ASSERT(
+            std::is_trivial<T>::value);
+
         auto const n = sizeof(T);
         BOOST_ASSERT(size_ >= n);
         std::memcpy(&t,
@@ -85,6 +95,9 @@ public:
     void
     pop(T& t)
     {
+        BOOST_STATIC_ASSERT(
+            std::is_trivial<T>::value);
+
         auto const n = sizeof(T);
         BOOST_ASSERT(size_ >= n);
         size_ -= n;
