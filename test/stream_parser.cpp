@@ -351,7 +351,7 @@ public:
         p.write(s.data(), s.size(), ec);
         if(BOOST_TEST(! ec))
             p.finish(ec);
-        BOOST_TEST(! ec);
+        BOOST_TEST(! ec); //s390x error
         return p.release();
     }
 
@@ -432,7 +432,7 @@ public:
         }
         catch(std::exception const&)
         {
-            BOOST_TEST_FAIL();
+            BOOST_TEST_FAIL(); // s390x error
         }
     }
 

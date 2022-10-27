@@ -73,10 +73,10 @@ struct pseudo_multimap1
 struct my_null { };
 
 struct described1 { };
-BOOST_DESCRIBE_STRUCT(described1, (), ());
+BOOST_DESCRIBE_STRUCT(described1, (), ())
 
 struct described2 : described1 { };
-BOOST_DESCRIBE_STRUCT(described2, (described1), ());
+BOOST_DESCRIBE_STRUCT(described2, (described1), ())
 
 struct described3
 {
@@ -85,7 +85,7 @@ struct described3
 private:
     int m;
 };
-BOOST_DESCRIBE_STRUCT(described3, (), (n));
+BOOST_DESCRIBE_STRUCT(described3, (), (n))
 
 struct described4
 {
@@ -109,10 +109,10 @@ union described6
 {
     int n;
 };
-BOOST_DESCRIBE_STRUCT(described6, (), (n));
+BOOST_DESCRIBE_STRUCT(described6, (), (n))
 
 enum class described_enum { e };
-BOOST_DESCRIBE_ENUM(described_enum, e);
+BOOST_DESCRIBE_ENUM(described_enum, e)
 
 enum class undescribed_enum { };
 
