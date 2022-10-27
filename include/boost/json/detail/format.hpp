@@ -10,6 +10,8 @@
 #ifndef BOOST_JSON_DETAIL_FORMAT_HPP
 #define BOOST_JSON_DETAIL_FORMAT_HPP
 
+#include <boost/json/string_view.hpp>
+
 BOOST_JSON_NS_BEGIN
 namespace detail {
 
@@ -35,6 +37,26 @@ BOOST_JSON_DECL
 unsigned
 format_double(
     char* dest, double d) noexcept;
+
+//---
+
+string_view
+write_int64(
+    char* temp,
+    std::size_t size,
+    std::int64_t v) noexcept;
+
+string_view
+write_uint64(
+    char* temp,
+    std::size_t size,
+    std::uint64_t v) noexcept;
+
+string_view
+write_double(
+    char* temp,
+    std::size_t size,
+    double v) noexcept;
 
 } // detail
 BOOST_JSON_NS_END

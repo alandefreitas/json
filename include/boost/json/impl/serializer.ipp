@@ -33,7 +33,7 @@ bool
 serializer::
 init_null()
 {
-    return detail::write_null(w_);
+    return w_.write_null();
 }
 
 bool
@@ -43,8 +43,8 @@ init_string()
     string_view s = static_cast<
         string_view>(*reinterpret_cast<
             string const*>(pt_));
-    return detail::write_string(
-        w_, s.data(), s.size());
+    return w_.write_string(
+        s.data(), s.size());
 }
 
 bool
@@ -53,8 +53,8 @@ init_string_view()
 {
     string_view s(reinterpret_cast<
         char const*>(pt_), pn_);
-    return detail::write_string(
-        w_, s.data(), s.size());
+    return w_.write_literal(
+        s.data(), s.size());
 }
 
 bool
@@ -215,7 +215,7 @@ do_obj1:
     for(;;)
     {
         // key
-        if(! detail::write_string(w,
+        if(! w.write_string(
             it->key().data(), it->key().size()))
         {
             st = obj2;
@@ -303,39 +303,34 @@ write_value(
     {
         string_view s = static_cast<
             string_view>(jv.get_string());
-        if(detail::write_string(
-                w, s.data(), s.size()))
+        if(w.write_string(s.data(), s.size()))
             return true;
         break;
     }
 
     case kind::int64:
-        if(detail::write_int64(
-                w, jv.get_int64()))
+        if(w.write_int64(jv.get_int64()))
             return true;
         break;
 
     case kind::uint64:
-        if(detail::write_uint64(
-                w, jv.get_uint64()))
+        if(w.write_uint64(jv.get_uint64()))
             return true;
         break;
 
     case kind::double_:
-        if(detail::write_double(
-                w, jv.get_double()))
+        if(w.write_double(jv.get_double()))
             return true;
         break;
 
     case kind::bool_:
-        if(detail::write_bool(
-                w, jv.get_bool()))
+        if(w.write_bool(jv.get_bool()))
             return true;
         break;
 
     default:
     case kind::null:
-        if(detail::write_null(w))
+        if(w.write_null())
             return true;
         break;
     }

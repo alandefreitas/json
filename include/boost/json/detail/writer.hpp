@@ -131,45 +131,44 @@ public:
         BOOST_ASSERT(n <= available());
         dest_ += n;
     }
+
+    //--------------------------------------------
+
+    BOOST_JSON_DECL
+    bool
+    write_literal(
+        char const* s,
+        std::size_t n);
+
+    BOOST_JSON_DECL
+    bool
+    write_null();
+
+    BOOST_JSON_DECL
+    bool
+    write_bool(bool b);
+
+    BOOST_JSON_DECL
+    bool
+    write_int64(
+        std::int64_t v);
+
+    BOOST_JSON_DECL
+    bool
+    write_uint64(
+        std::uint64_t v);
+
+    BOOST_JSON_DECL
+    bool
+    write_double(
+        double v);
+
+    BOOST_JSON_DECL
+    bool
+    write_string(
+        char const* s,
+        std::size_t n);
 };
-
-//------------------------------------------------
-
-BOOST_JSON_DECL
-bool
-write_null(
-    writer& w);
-
-BOOST_JSON_DECL
-bool
-write_bool(
-    writer& w,
-    bool b);
-
-BOOST_JSON_DECL
-bool
-write_int64(
-    writer& w,
-    std::int64_t v);
-
-BOOST_JSON_DECL
-bool
-write_uint64(
-    writer& w,
-    std::uint64_t v);
-
-BOOST_JSON_DECL
-bool
-write_double(
-    writer& w,
-    double v);
-
-BOOST_JSON_DECL
-bool
-write_string(
-    writer& w,
-    char const* s,
-    std::size_t n);
 
 } // detail
 } // json

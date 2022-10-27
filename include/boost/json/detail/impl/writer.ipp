@@ -3,7 +3,7 @@
 // Copyright (c) 2020 Krystian Stasiowski (sdkrystian@gmail.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// file LICENSE_1_0.txt or copy at http://wwboost.org/LICENSE_1_0.txt)
 //
 // Official repository: https://github.com/boostorg/json
 //
@@ -31,157 +31,86 @@ BOOST_STATIC_ASSERT(
 
 //------------------------------------------------
 
-// resume output of a string literal,
-// e.g. "null", "true", "false", "nan".
-static
 bool
-resume_literal(
-    writer& w)
+writer::
+write_literal(
+    char const* s,
+    std::size_t n)
 {
-    char const* p;
-    std::size_t n;
-
-    w.stack.pop(p);
-    w.stack.pop(n);
-
-    auto const avail =
-        w.available();
-
+    auto const avail = available();
     if(avail >= n)
     {
-        w.append_unsafe(p, n);
+        std::memcpy(dest_, s, n);
+        dest_ += n;
         return true;
     }
 
-    w.append_unsafe(p, avail);
-    p += avail;
+    // partial output
+    std::memcpy(dest_, s, avail);
+    dest_ += avail;
+    s += avail;
     n -= avail;
 
-    w.stack.push(n);
-    w.stack.push(p);
-    w.push_resume(&resume_literal);
+    // suspend
+    stack.push(n);
+    stack.push(s);
+    push_resume(
+        [](writer& w) -> bool
+        {
+            char const* s;
+            std::size_t n;
+            w.stack.pop(s);
+            w.stack.pop(n);
+            return w.write_literal(s, n);
+        });
     return false;
 }
 
 bool
-write_null(
-    writer& w)
+writer::
+write_null()
 {
-    static char const* const s = "null";
-    if(w.has_space(4))
-    {
-        w.append_unsafe(s, 4);
-        return true;
-    }
-
-    w.stack.push(std::size_t(4));
-    w.stack.push(s);
-    return resume_literal(w);
+    return write_literal("null", 4);
 }
 
 bool
+writer::
 write_bool(
-    writer& w,
     bool b)
 {
     if(b)
-    {
-        static char const* const s = "true";
-        if(w.has_space(4))
-        {
-            w.append_unsafe(s, 4);
-            return true;
-        }
-
-        w.stack.push(std::size_t(4));
-        w.stack.push(s);
-        return resume_literal(w);
-    }
-    else
-    {
-        static char const* const s = "false";
-        if(w.has_space(5))
-        {
-            w.append_unsafe(s, 5);
-            return true;
-        }
-
-        w.stack.push(std::size_t(5));
-        w.stack.push(s);
-        return resume_literal(w);
-    }
+        return write_literal("true", 4);
+    return write_literal("false", 5);
 }
 
 bool
+writer::
 write_int64(
-    writer& w,
     std::int64_t v)
 {
-    using T = std::int64_t;
-    auto const N = 
-        std::numeric_limits<T>::digits10 + 1 +
-        std::numeric_limits<T>::is_signed;
-    if(w.has_space(N))
-    {
-        auto const n = 
-            detail::format_int64(w.data(), v);
-        w.advance_unsafe(n);
-        return true;
-    }
-
-    BOOST_STATIC_ASSERT(sizeof(w.temp) >= N);
-    std::size_t const n = 
-        detail::format_int64(w.temp, v);
-    w.stack.push(n);
-    w.stack.push((char const*)(w.temp));
-    return resume_literal(w);
+    auto s = detail::write_int64(
+        temp, sizeof(temp), v);
+    return write_literal(s.data(), s.size());
 }
 
 bool
+writer::
 write_uint64(
-    writer& w,
     std::uint64_t v)
 {
-    using T = std::uint64_t;
-    auto const N = 
-        std::numeric_limits<T>::digits10 + 1 +
-        std::numeric_limits<T>::is_signed;
-    if(w.has_space(N))
-    {
-        auto const n = 
-            detail::format_uint64(w.data(), v);
-        w.advance_unsafe(n);
-        return true;
-    }
-
-    BOOST_STATIC_ASSERT(sizeof(w.temp) >= N);
-    std::size_t const n = 
-        detail::format_uint64(w.temp, v);
-    w.stack.push(n);
-    w.stack.push((char const*)(w.temp));
-    return resume_literal(w);
+    auto s = detail::write_uint64(
+        temp, sizeof(temp), v);
+    return write_literal(s.data(), s.size());
 }
 
 bool
+writer::
 write_double(
-    writer& w,
     double v)
 {
-    auto const N = max_number_chars;
-    if(w.has_space(N))
-    {
-        auto const n = 
-            detail::format_double(w.data(), v);
-        w.advance_unsafe(n);
-        return true;
-    }
-
-    BOOST_STATIC_ASSERT(sizeof(w.temp) >= N);
-    std::size_t const n = 
-        detail::format_double(w.temp, v);
-    w.stack.push(n);
-    w.stack.push((char const*)(w.temp));
-    return resume_literal(w);
+    auto s = detail::write_double(
+        temp, sizeof(temp), v);
+    return write_literal(s.data(), s.size());
 }
 
 //------------------------------------------------
@@ -201,8 +130,8 @@ string_esc[] =
     "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 
 bool
+writer::
 write_string(
-    writer& w,
     char const* s,
     std::size_t n)
 {
@@ -213,9 +142,9 @@ write_string(
     };
 
     state st;
-    if(! w.stack.empty())
+    if(! stack.empty())
     {
-        w.stack.pop(st);
+        stack.pop(st);
         switch(st)
         {
         case state::str1: goto do_str1;
@@ -232,7 +161,7 @@ write_string(
     }
 
 do_str1:
-    if(! w.append('\"'))
+    if(! append('\"'))
     {
         st = str1;
         goto suspend;
@@ -241,11 +170,11 @@ do_str1:
 do_str2:
     // handle the first contiguous
     // run of unescaped characters.
-    if(! w.empty())
+    if(! empty())
     {
         if(n > 0)
         {
-            auto const avail = w.available();
+            auto const avail = available();
             std::size_t n1;
             if(avail >= n)
                 n1 = detail::count_unescaped(s, n);
@@ -253,10 +182,10 @@ do_str2:
                 n1 = detail::count_unescaped(s, avail);
             if(n1 > 0)
             {
-                w.append_unsafe(s, n1);
+                append_unsafe(s, n1);
                 s += n1;
                 n -= n1;
-                if(w.empty())
+                if(empty())
                 {
                     st = str2;
                     goto suspend;
@@ -266,7 +195,7 @@ do_str2:
         else
         {
             // done
-            w.append_unsafe('\"');
+            append_unsafe('\"');
             return true;
         }
     }
@@ -278,7 +207,7 @@ do_str2:
 
 do_str3:
     // loop over escaped and unescaped characters
-    while(! w.empty())
+    while(! empty())
     {
         if(n > 0)
         {
@@ -289,34 +218,34 @@ do_str3:
             --n;
             if(! c)
             {
-                w.append_unsafe(ch);
+                append_unsafe(ch);
             }
             else if(c != 'u')
             {
-                w.append_unsafe('\\');
-                if(! w.append(c))
+                append_unsafe('\\');
+                if(! append(c))
                 {
-                    w.temp[0] = c;
+                    temp[0] = c;
                     st = esc1;
                     goto suspend;
                 }
             }
             else
             {
-                if(w.available() >= 6)
+                if(available() >= 6)
                 {
-                    w.append_unsafe("\\u00", 4);
-                    w.append_unsafe(string_hex[static_cast<
+                    append_unsafe("\\u00", 4);
+                    append_unsafe(string_hex[static_cast<
                         unsigned char>(ch) >> 4]);
-                    w.append_unsafe(string_hex[static_cast<
+                    append_unsafe(string_hex[static_cast<
                         unsigned char>(ch) & 15]);
                 }
                 else
                 {
-                    w.append_unsafe('\\');
-                    w.temp[0] = string_hex[static_cast<
+                    append_unsafe('\\');
+                    temp[0] = string_hex[static_cast<
                         unsigned char>(ch) >> 4];
-                    w.temp[1] = string_hex[static_cast<
+                    temp[1] = string_hex[static_cast<
                         unsigned char>(ch) & 15];
                     goto do_utf1;
                 }
@@ -325,7 +254,7 @@ do_str3:
         else
         {
             // done
-            w.append_unsafe('\"');
+            append_unsafe('\"');
             return true;
         }
     }
@@ -333,14 +262,14 @@ do_str3:
     goto suspend;
 
 do_str4:
-    if(! w.append('\"'))
+    if(! append('\"'))
     {
         st = str4;
         goto suspend;
     }
 
 do_esc1:
-    if(! w.append(w.temp[0]))
+    if(! append(temp[0]))
     {
         st = esc1;
         goto suspend;
@@ -348,31 +277,31 @@ do_esc1:
     goto do_str3;
 
 do_utf1:
-    if(! w.append('u'))
+    if(! append('u'))
     {
         st = utf1;
         goto suspend;
     }
 do_utf2:
-    if(! w.append('0'))
+    if(! append('0'))
     {
         st = utf2;
         goto suspend;
     }
 do_utf3:
-    if(! w.append('0'))
+    if(! append('0'))
     {
         st = utf3;
         goto suspend;
     }
 do_utf4:
-    if(! w.append(w.temp[0]))
+    if(! append(temp[0]))
     {
         st = utf4;
         goto suspend;
     }
 do_utf5:
-    if(! w.append(w.temp[1]))
+    if(! append(temp[1]))
     {
         st = utf5;
         goto suspend;
@@ -380,10 +309,10 @@ do_utf5:
     goto do_str3;
 
 suspend:
-    w.stack.push(st);
-    w.stack.push(n);
-    w.stack.push(s);
-    w.push_resume(
+    stack.push(st);
+    stack.push(n);
+    stack.push(s);
+    push_resume(
         [](writer& w)
         {
             char const* s;
@@ -391,7 +320,7 @@ suspend:
 
             w.stack.pop(s);
             w.stack.pop(n);
-            return write_string(w, s, n);
+            return w.write_string(s, n);
         });
     return false;
 }

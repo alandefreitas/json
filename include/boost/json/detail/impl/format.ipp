@@ -12,6 +12,8 @@
 #define BOOST_JSON_DETAIL_IMPL_FORMAT_IPP
 
 #include <boost/json/detail/ryu/ryu.hpp>
+#include <boost/core/ignore_unused.hpp>
+
 #include <cstring>
 
 BOOST_JSON_NS_BEGIN
@@ -115,6 +117,44 @@ format_double(
 {
     return static_cast<int>(
         ryu::d2s_buffered_n(d, dest));
+}
+
+//------------------------------------------------
+
+string_view
+write_int64(
+    char* temp,
+    std::size_t size,
+    std::int64_t v) noexcept
+{
+    boost::ignore_unused(size);
+    auto const n =
+        format_int64(temp, v);
+    return { temp, n };
+}
+
+string_view
+write_uint64(
+    char* temp,
+    std::size_t size,
+    std::uint64_t v) noexcept
+{
+    boost::ignore_unused(size);
+    auto const n =
+        format_uint64(temp, v);
+    return { temp, n };
+}
+
+string_view
+write_double(
+    char* temp,
+    std::size_t size,
+    double v) noexcept
+{
+    boost::ignore_unused(size);
+    auto const n =
+        format_double(temp, v);
+    return { temp, n };
 }
 
 } // detail
