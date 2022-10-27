@@ -8,8 +8,8 @@
 // Official repository: https://github.com/boostorg/json
 //
 
-#ifndef BOOST_JSON_DETAIL_WRITE_HPP
-#define BOOST_JSON_DETAIL_WRITE_HPP
+#ifndef BOOST_JSON_DETAIL_WRITER_HPP
+#define BOOST_JSON_DETAIL_WRITER_HPP
 
 #include <boost/json/string_view.hpp>
 #include <boost/json/detail/stack.hpp>
@@ -18,14 +18,14 @@ namespace boost {
 namespace json {
 namespace detail {
 
-struct write_context
+struct writer
 {
     char* dest_;
     char const* end_;
 
 public:
     using resume_fn =
-        bool(*)(write_context&);
+        bool(*)(writer&);
 
     detail::stack stack;
     char temp[28];
@@ -138,36 +138,36 @@ public:
 BOOST_JSON_DECL
 bool
 write_null(
-    write_context& w);
+    writer& w);
 
 BOOST_JSON_DECL
 bool
 write_bool(
-    write_context& w,
+    writer& w,
     bool b);
 
 BOOST_JSON_DECL
 bool
 write_int64(
-    write_context& w,
+    writer& w,
     std::int64_t v);
 
 BOOST_JSON_DECL
 bool
 write_uint64(
-    write_context& w,
+    writer& w,
     std::uint64_t v);
 
 BOOST_JSON_DECL
 bool
 write_double(
-    write_context& w,
+    writer& w,
     double v);
 
 BOOST_JSON_DECL
 bool
 write_string(
-    write_context& w,
+    writer& w,
     char const* s,
     std::size_t n);
 

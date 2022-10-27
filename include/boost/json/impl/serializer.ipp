@@ -92,7 +92,7 @@ init_value()
 bool
 serializer::
 write_array(
-    detail::write_context& w,
+    detail::writer& w,
     array const& arr,
     array::const_iterator it)
 {
@@ -155,7 +155,7 @@ suspend:
     w.stack.push(it);
     w.stack.push(&arr);
     w.push_resume(
-        [](detail::write_context& w)
+        [](detail::writer& w)
         {
             array const* pa;
             array::const_iterator it;
@@ -170,7 +170,7 @@ suspend:
 bool
 serializer::
 write_object(
-    detail::write_context& w,
+    detail::writer& w,
     object const& obj,
     object::const_iterator it)
 {
@@ -256,7 +256,7 @@ suspend:
     w.stack.push(it);
     w.stack.push(&obj);
     w.push_resume(
-        [](detail::write_context& w)
+        [](detail::writer& w)
         {
             object const* po;
             object::const_iterator it;
@@ -271,7 +271,7 @@ suspend:
 bool
 serializer::
 write_value(
-    detail::write_context& w,
+    detail::writer& w,
     value const& jv)
 {
     if(! w.stack.empty())
@@ -342,7 +342,7 @@ write_value(
 
 suspend:
     w.push_resume(
-        [](detail::write_context& w)
+        [](detail::writer& w)
         {
             resume_fn fn;
             w.stack.pop(fn);

@@ -8,12 +8,11 @@
 // Official repository: https://github.com/boostorg/json
 //
 
-#ifndef BOOST_JSON_DETAIL_IMPL_WRITE_IPP
-#define BOOST_JSON_DETAIL_IMPL_WRITE_IPP
+#ifndef BOOST_JSON_DETAIL_IMPL_WRITER_IPP
+#define BOOST_JSON_DETAIL_IMPL_WRITER_IPP
 
+#include <boost/json/detail/writer.hpp>
 #include <boost/json/detail/sse2.hpp>
-#include <boost/json/detail/write.hpp>
-
 #include <boost/json/detail/format.hpp> // for max_number_chars
 #include <boost/static_assert.hpp>
 
@@ -23,12 +22,12 @@ namespace detail {
 
 // ensure room for largest printed number
 BOOST_STATIC_ASSERT(
-    sizeof(write_context::temp) >=
+    sizeof(writer::temp) >=
     max_number_chars + 1);
 
 // ensure room for \uXXXX escape plus one
 BOOST_STATIC_ASSERT(
-    sizeof(write_context::temp) >= 7);
+    sizeof(writer::temp) >= 7);
 
 //------------------------------------------------
 
@@ -37,7 +36,7 @@ BOOST_STATIC_ASSERT(
 static
 bool
 resume_literal(
-    write_context& w)
+    writer& w)
 {
     char const* p;
     std::size_t n;
@@ -66,7 +65,7 @@ resume_literal(
 
 bool
 write_null(
-    write_context& w)
+    writer& w)
 {
     static char const* const s = "null";
     if(w.has_space(4))
@@ -82,7 +81,7 @@ write_null(
 
 bool
 write_bool(
-    write_context& w,
+    writer& w,
     bool b)
 {
     if(b)
@@ -115,7 +114,7 @@ write_bool(
 
 bool
 write_int64(
-    write_context& w,
+    writer& w,
     std::int64_t v)
 {
     using T = std::int64_t;
@@ -140,7 +139,7 @@ write_int64(
 
 bool
 write_uint64(
-    write_context& w,
+    writer& w,
     std::uint64_t v)
 {
     using T = std::uint64_t;
@@ -165,7 +164,7 @@ write_uint64(
 
 bool
 write_double(
-    write_context& w,
+    writer& w,
     double v)
 {
     auto const N = max_number_chars;
@@ -203,7 +202,7 @@ string_esc[] =
 
 bool
 write_string(
-    write_context& w,
+    writer& w,
     char const* s,
     std::size_t n)
 {
@@ -385,7 +384,7 @@ suspend:
     w.stack.push(n);
     w.stack.push(s);
     w.push_resume(
-        [](write_context& w)
+        [](writer& w)
         {
             char const* s;
             std::size_t n;
