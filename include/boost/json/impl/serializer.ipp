@@ -302,9 +302,8 @@ write_value(
 
     case kind::string:
     {
-        string_view s = static_cast<
-            string_view>(jv.get_string());
-        if(w.write_string(s.data(), s.size()))
+        auto const& str = jv.get_string();
+        if(w.write_string(str.data(), str.size()))
             return true;
         break;
     }
