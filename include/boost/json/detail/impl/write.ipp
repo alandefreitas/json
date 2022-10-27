@@ -128,7 +128,7 @@ write_int64(
     std::size_t const n = 
         detail::format_int64(w.temp, v);
     w.stack.push(n);
-    w.stack.push(w.temp);
+    w.stack.push((char const*)(w.temp));
     return resume_literal(w);
 }
 
@@ -144,16 +144,39 @@ write_uint64(
     if(w.has_space(N))
     {
         auto const n = 
-            detail::format_int64(w.data(), v);
+            detail::format_uint64(w.data(), v);
         w.advance_unsafe(n);
         return true;
     }
 
     BOOST_STATIC_ASSERT(sizeof(w.temp) >= N);
     std::size_t const n = 
-        detail::format_int64(w.temp, v);
+        detail::format_uint64(w.temp, v);
     w.stack.push(n);
-    w.stack.push(w.temp);
+    w.stack.push((char const*)(w.temp));
+    return resume_literal(w);
+}
+
+bool
+write_double(
+    write_context& w,
+    double v)
+{
+    using T = std::uint64_t;
+    auto const N = max_number_chars;
+    if(w.has_space(N))
+    {
+        auto const n = 
+            detail::format_double(w.data(), v);
+        w.advance_unsafe(n);
+        return true;
+    }
+
+    BOOST_STATIC_ASSERT(sizeof(w.temp) >= N);
+    std::size_t const n = 
+        detail::format_double(w.temp, v);
+    w.stack.push(n);
+    w.stack.push((char const*)(w.temp));
     return resume_literal(w);
 }
 

@@ -24,7 +24,6 @@ BOOST_JSON_NS_BEGIN
 
 enum class serializer::state : char
 {
-    num,
     arr1, arr2, arr3, arr4,
     obj1, obj2, obj3, obj4, obj5, obj6,
 
@@ -91,76 +90,6 @@ init_string(stream& ss)
         w_, cs0_.data(), cs0_.remain());
     ss.advance(w_.data() - ss.data());
     return b;
-}
-
-template<bool StackEmpty>
-bool
-serializer::
-write_number(stream& ss0)
-{
-    local_stream ss(ss0);
-    if(StackEmpty || w_.stack.empty())
-    {
-        switch(jv_->kind())
-        {
-        default:
-        case kind::int64:
-            if(BOOST_JSON_LIKELY(
-                ss.remain() >=
-                    detail::max_number_chars))
-            {
-                ss.advance(detail::format_int64(
-                    ss.data(), jv_->get_int64()));
-                return true;
-            }
-            cs0_ = { w_.temp, detail::format_int64(
-                w_.temp, jv_->get_int64()) };
-            break;
-
-        case kind::uint64:
-            if(BOOST_JSON_LIKELY(
-                ss.remain() >=
-                    detail::max_number_chars))
-            {
-                ss.advance(detail::format_uint64(
-                    ss.data(), jv_->get_uint64()));
-                return true;
-            }
-            cs0_ = { w_.temp, detail::format_uint64(
-                w_.temp, jv_->get_uint64()) };
-            break;
-
-        case kind::double_:
-            if(BOOST_JSON_LIKELY(
-                ss.remain() >=
-                    detail::max_number_chars))
-            {
-                ss.advance(detail::format_double(
-                    ss.data(), jv_->get_double()));
-                return true;
-            }
-            cs0_ = { w_.temp, detail::format_double(
-                w_.temp, jv_->get_double()) };
-            break;
-        }
-    }
-    else
-    {
-        state st;
-        w_.stack.pop(st);
-        BOOST_ASSERT(
-            st == state::num);
-    }
-    auto const n = ss.remain();
-    if(n < cs0_.remain())
-    {
-        ss.append(cs0_.data(), n);
-        cs0_.skip(n);
-        return suspend(state::num);
-    }
-    ss.append(
-        cs0_.data(), cs0_.remain());
-    return true;
 }
 
 template<bool StackEmpty>
@@ -359,9 +288,31 @@ write_value(stream& ss)
         }
 
         case kind::int64:
+        {
+            w_.prepare(ss.data(), ss.remain());
+            auto b = detail::write_int64(
+                w_, jv_->get_int64());
+            ss.advance(w_.data() - ss.data());
+            return b;
+        }
+
         case kind::uint64:
+        {
+            w_.prepare(ss.data(), ss.remain());
+            auto b = detail::write_uint64(
+                w_, jv_->get_uint64());
+            ss.advance(w_.data() - ss.data());
+            return b;
+        }
+
         case kind::double_:
-            return write_number<true>(ss);
+        {
+            w_.prepare(ss.data(), ss.remain());
+            auto b = detail::write_double(
+                w_, jv_->get_double());
+            ss.advance(w_.data() - ss.data());
+            return b;
+        }
 
         case kind::bool_:
             if(jv.get_bool())
@@ -404,9 +355,6 @@ write_value(stream& ss)
         }
 
         default:
-        case state::num:
-            return write_number<StackEmpty>(ss);
-
         case state::arr1: case state::arr2:
         case state::arr3: case state::arr4:
             return write_array<StackEmpty>(ss);
